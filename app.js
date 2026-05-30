@@ -7,17 +7,17 @@
    ═══════════════════════════════════════════════════════════════ */
 
 // ── CONFIG ── FILL THESE IN ──────────────────────────────────
-const TMDB_API_KEY    = "ba8ddf8e7b60437308efe36024b1c3d6";
-const ADMIN_PASSWORD  = "jolene";
+const TMDB_API_KEY    = "PASTE_YOUR_TMDB_KEY_HERE";
+const ADMIN_PASSWORD  = "drama2024";   // Change this to whatever you want!
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD5k6pwAwZ89dfoUfcUhwD22tcuHkR2A_A",
-  authDomain: "drama-list-e4b7a.firebaseapp.com",
-  databaseURL: "https://drama-list-e4b7a-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "drama-list-e4b7a",
-  storageBucket: "drama-list-e4b7a.firebasestorage.app",
-  messagingSenderId: "60250688988",
-  appId: "1:60250688988:web:51c318c98d4f1ce534d319"
+  apiKey:            "PASTE_FROM_FIREBASE",
+  authDomain:        "PASTE_FROM_FIREBASE",
+  databaseURL:       "PASTE_FROM_FIREBASE",   // ends in .firebaseio.com
+  projectId:         "PASTE_FROM_FIREBASE",
+  storageBucket:     "PASTE_FROM_FIREBASE",
+  messagingSenderId: "PASTE_FROM_FIREBASE",
+  appId:             "PASTE_FROM_FIREBASE"
 };
 // ─────────────────────────────────────────────────────────────
 
@@ -84,41 +84,63 @@ function setAdmin(v) {
   render();
 }
 
-// ── TMDB poster fetch ────────────────────────────────────────
-async function fetchPoster(title, year) {
-  if (!TMDB_API_KEY || TMDB_API_KEY === "PASTE_YOUR_TMDB_KEY_HERE") return "";
+// ── Country code → readable name ─────────────────────────────
+function mapCountry(originCountries) {
+  if (!originCountries || !originCountries.length) return "Other";
+  const code = originCountries[0];
+  const map  = {
+    KR: "Korean", CN: "Chinese", JP: "Japanese",
+    TH: "Thai",   TW: "Taiwanese", HK: "Chinese",
+    US: "Other",  GB: "Other"
+  };
+  return map[code] || "Other";
+}
+
+// ── TMDB fetch — returns { poster, year, country } ───────────
+async function fetchTMDB(title) {
+  if (!TMDB_API_KEY || TMDB_API_KEY === "PASTE_YOUR_TMDB_KEY_HERE") {
+    return { poster: "", year: new Date().getFullYear(), country: "Korean" };
+  }
   try {
     const query = encodeURIComponent(title);
-    const url   = `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${query}&first_air_date_year=${year}&language=en-US`;
+    const url   = `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${query}&language=en-US`;
     const res   = await fetch(url);
     const data  = await res.json();
 
-    // Find best match (prefer TV shows)
+    // prefer TV shows with a poster
     const results = (data.results || []).filter(r => r.poster_path);
-    if (!results.length) return "";
+    if (!results.length) return { poster: "", year: new Date().getFullYear(), country: "Korean" };
 
-    const best = results.find(r => r.media_type === "tv") || results[0];
-    return `https://image.tmdb.org/t/p/w300${best.poster_path}`;
+    const best    = results.find(r => r.media_type === "tv") || results[0];
+    const poster  = `https://image.tmdb.org/t/p/w300${best.poster_path}`;
+    const dateStr = best.first_air_date || best.release_date || "";
+    const year    = dateStr ? parseInt(dateStr.slice(0, 4)) : new Date().getFullYear();
+    const country = mapCountry(best.origin_country);
+
+    return { poster, year, country };
   } catch (e) {
     console.warn("TMDB fetch failed:", e);
-    return "";
+    return { poster: "", year: new Date().getFullYear(), country: "Korean" };
   }
 }
 
 // ── Add Drama ─────────────────────────────────────────────────
 async function addDrama() {
-  const title   = document.getElementById("titleInput").value.trim();
-  const year    = parseInt(document.getElementById("yearInput").value) || new Date().getFullYear();
-  const country = document.getElementById("countryInput").value || "Korean";
+  const title          = document.getElementById("titleInput").value.trim();
+  const manualYear     = parseInt(document.getElementById("yearInput").value);
+  const manualCountry  = document.getElementById("countryInput").value;
 
   if (!title) { showToast("✦ Please enter a drama title"); return; }
 
   const btn = document.getElementById("addBtn");
   btn.disabled    = true;
-  btn.textContent = "Fetching poster...";
+  btn.textContent = "Fetching info...";
 
-  // auto-fetch poster from TMDB
-  const poster = await fetchPoster(title, year);
+  // auto-fetch poster, year, country from TMDB
+  const tmdb    = await fetchTMDB(title);
+  const poster  = tmdb.poster;
+  const year    = manualYear  || tmdb.year;
+  const country = manualCountry || tmdb.country;
 
   const id    = "d_" + Date.now();
   const drama = { id, title, year, country, fav: false, addedAt: Date.now(), poster };
@@ -129,6 +151,7 @@ async function addDrama() {
   // clear inputs
   document.getElementById("titleInput").value  = "";
   document.getElementById("yearInput").value   = "";
+  document.getElementById("countryInput").value = "";
 
   showToast("✓ Added: " + title + (poster ? " 🖼" : ""));
   btn.disabled    = false;
@@ -269,7 +292,76 @@ function spawnPetals() {
   }
 }
 
-// ── Close modal on background click ──────────────────────────
+// ── Bulk Add ──────────────────────────────────────────────────
+async function bulkAdd() {
+  const raw   = document.getElementById("bulkInput").value.trim();
+  if (!raw) { showToast("✦ Paste some drama titles first"); return; }
+
+  // split by newline, clean up empty lines and duplicates
+  const lines = [...new Set(
+    raw.split("\n")
+       .map(l => l.trim())
+       .filter(l => l.length > 0)
+  )];
+
+  if (!lines.length) { showToast("✦ No titles found"); return; }
+
+  // check for duplicates already in the list
+  const existingTitles = Object.values(dramas).map(d => d.title.toLowerCase());
+  const toAdd = lines.filter(l => !existingTitles.includes(l.toLowerCase()));
+  const skipped = lines.length - toAdd.length;
+
+  if (!toAdd.length) {
+    showToast("All dramas already in the list!");
+    return;
+  }
+
+  const btn      = document.getElementById("bulkBtn");
+  const progress = document.getElementById("bulkProgress");
+  btn.disabled   = true;
+
+  progress.innerHTML = `
+    <div>Adding <strong>${toAdd.length}</strong> dramas${skipped ? ` (${skipped} already exist, skipping)` : ""}... please wait 🌸</div>
+    <div class="prog-bar-wrap"><div class="prog-bar" id="progBar" style="width:0%"></div></div>`;
+
+  let done = 0;
+
+  for (const title of toAdd) {
+    // fetch poster + year + country from TMDB
+    let poster  = "";
+    let year    = new Date().getFullYear();
+    let country = "Other";
+
+    if (TMDB_API_KEY && TMDB_API_KEY !== "PASTE_YOUR_TMDB_KEY_HERE") {
+      try {
+        const tmdb = await fetchTMDB(title);
+        poster  = tmdb.poster;
+        year    = tmdb.year;
+        country = tmdb.country;
+      } catch (e) { /* silently skip if fetch fails */ }
+    }
+
+    const id    = "d_" + Date.now() + "_" + Math.random().toString(36).slice(2,6);
+    const drama = { id, title, year, country: "Korean", fav: false, addedAt: Date.now() - (toAdd.length - done) * 10, poster };
+    await set(ref(db, `dramas/${id}`), drama);
+
+    done++;
+    const pct = Math.round((done / toAdd.length) * 100);
+    document.getElementById("progBar").style.width = pct + "%";
+    progress.querySelector("div").textContent =
+      `Added ${done} of ${toAdd.length}${skipped ? ` (${skipped} skipped)` : ""}... 🌸`;
+
+    // small delay so we don't hammer the API
+    await new Promise(r => setTimeout(r, 300));
+  }
+
+  progress.innerHTML = `✓ Done! Added <strong>${done}</strong> dramas${skipped ? `, skipped ${skipped} duplicates` : ""} 🎉`;
+  document.getElementById("bulkInput").value = "";
+  btn.disabled = false;
+  showToast(`✓ Imported ${done} dramas!`);
+}
+
+
 document.getElementById("modalBg").addEventListener("click", function(e) {
   if (e.target === this) closePasswordModal();
 });
@@ -279,6 +371,7 @@ window.openPasswordModal  = openPasswordModal;
 window.closePasswordModal = closePasswordModal;
 window.checkPassword      = checkPassword;
 window.addDrama           = addDrama;
+window.bulkAdd            = bulkAdd;
 window.toggleFav          = toggleFav;
 window.deleteDrama        = deleteDrama;
 window.setSort            = setSort;

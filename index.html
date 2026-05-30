@@ -43,6 +43,19 @@
         <button class="btn-add" id="addBtn" onclick="addDrama()">+ Add</button>
       </div>
       <p class="add-note">🪄 Poster fetches automatically from TMDB when you type the title</p>
+
+      <!-- BULK IMPORT -->
+      <div class="bulk-divider">
+        <span>or import a whole list at once</span>
+      </div>
+      <div class="bulk-row">
+        <textarea class="bulk-input" id="bulkInput" placeholder="Paste her drama list here, one title per line:&#10;&#10;Crash Landing on You&#10;Business Proposal&#10;My Liberation Notes&#10;Extraordinary You&#10;..."></textarea>
+      </div>
+      <div class="bulk-footer">
+        <span class="bulk-note">📋 Paste from Notes — one drama per line. Year + poster fetch automatically.</span>
+        <button class="btn-bulk" id="bulkBtn" onclick="bulkAdd()">Import all ✦</button>
+      </div>
+      <div class="bulk-progress" id="bulkProgress"></div>
     </div>
 
     <!-- ─── STATS ROW ─────────────────────────── -->
@@ -83,6 +96,6 @@
   <!-- ─── TOAST NOTIFICATION ───────────────────── -->
   <div class="toast" id="toast"></div>
 
-  <script src="app.js" type="module"></script>
+  <script src="app.js"></script>
 </body>
 </html>
