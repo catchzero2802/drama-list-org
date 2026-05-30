@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Her Drama List</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ─── HEADER ─────────────────────────────── -->
+  <div class="page-wrap">
+    <header class="header">
+      <div class="header-petals" id="petals"></div>
+      <h1>her <span>drama</span> list</h1>
+      <p class="subtitle">a personal collection of stories</p>
+      <div class="header-deco">✿</div>
+    </header>
+
+    <!-- ─── ADMIN TOGGLE ─────────────────────── -->
+    <div class="admin-bar">
+      <button class="admin-btn" id="adminToggle" onclick="openPasswordModal()">
+        🔒 manage list
+      </button>
+    </div>
+
+    <!-- ─── ADD PANEL (only visible when logged in) ─── -->
+    <div class="add-panel" id="addPanel">
+      <h3>Add a new drama ✦</h3>
+      <div class="add-row">
+        <input class="add-input" id="titleInput" type="text" placeholder="Drama title (e.g. Crash Landing on You)" onkeydown="if(event.key==='Enter')addDrama()">
+        <input class="add-input year-input" id="yearInput" type="number" placeholder="Year" min="2000" max="2030">
+        <select class="add-select" id="countryInput">
+          <option value="">🌏 Country</option>
+          <option value="Korean">🇰🇷 Korean</option>
+          <option value="Chinese">🇨🇳 Chinese</option>
+          <option value="Japanese">🇯🇵 Japanese</option>
+          <option value="Thai">🇹🇭 Thai</option>
+          <option value="Taiwanese">🇹🇼 Taiwanese</option>
+          <option value="Other">🌐 Other</option>
+        </select>
+        <button class="btn-add" id="addBtn" onclick="addDrama()">+ Add</button>
+      </div>
+      <p class="add-note">🪄 Poster fetches automatically from TMDB when you type the title</p>
+    </div>
+
+    <!-- ─── STATS ROW ─────────────────────────── -->
+    <div class="stats-row" id="statsRow"></div>
+
+    <!-- ─── SEARCH & FILTERS ──────────────────── -->
+    <div class="controls">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search by title or country..." id="searchInput" oninput="render()">
+      </div>
+      <div class="filter-btns">
+        <button class="filter-btn active" id="sort-added"  onclick="setSort('added',this)">Recent</button>
+        <button class="filter-btn"         id="sort-alpha"  onclick="setSort('alpha',this)">A–Z</button>
+        <button class="filter-btn"         id="sort-year"   onclick="setSort('year',this)">Year</button>
+        <button class="filter-btn"         id="sort-fav"    onclick="setSort('fav',this)">★ Favs</button>
+      </div>
+    </div>
+
+    <!-- ─── DRAMA GRID ────────────────────────── -->
+    <div class="drama-grid" id="grid"></div>
+  </div>
+
+  <!-- ─── PASSWORD MODAL ───────────────────────── -->
+  <div class="modal-bg" id="modalBg">
+    <div class="modal">
+      <h3>Welcome back ✦</h3>
+      <p>Enter your password to manage the list</p>
+      <input type="password" id="pwInput" placeholder="••••••" onkeydown="if(event.key==='Enter')checkPassword()">
+      <p class="modal-err" id="pwErr"></p>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="closePasswordModal()">Cancel</button>
+        <button class="btn-confirm" onclick="checkPassword()">Enter ✦</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── TOAST NOTIFICATION ───────────────────── -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
