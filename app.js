@@ -8,7 +8,7 @@
 
 // ── CONFIG ── FILL THESE IN ──────────────────────────────────
 const TMDB_API_KEY    = "PASTE_YOUR_TMDB_KEY_HERE";
-const ADMIN_PASSWORD  = "drama2024";   // Change this to whatever you want!
+const ADMIN_PASSWORD  = "210326";   // Change this to whatever you want!
 
 const firebaseConfig = {
   apiKey:            "PASTE_FROM_FIREBASE",
